@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password_hash String?   // Optional because Google users won't have it
+  avatar_url    String?   // Can be same as image
+  languages     String?
+  location      String?
+  rating_avg    Float     @default(0)
+  created_at    DateTime  @default(now())
+
+  accounts      Account[]
+  sessions      Session[]
+
+  teachSkills   TeachSkill[]
+  learnSkills   LearnSkill[]
+  
+  // Sessions as teacher and learner
+  sessionsAsTeacher SessionModel[] @relation("TeacherSessions")
+  sessionsAsLearner SessionModel[] @relation("LearnerSessions")
+
+  // Token relationships
+  tokenBalance     TokenBalance?
+  transactions     TokenTransaction[]
+  
+  sentMessages     Message[]  @relation("SentMessages")
+  receivedMessages Message[]  @relation("ReceivedMessages")
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  content    String
+  senderId   String
+  receiverId String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  created_at DateTime @default(now())
+}
+
+model Account {
+  id                 String  @id @default(uuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Renamed original Session to avoid conflict with NextAuth Session
+model SessionModel {
+  id           String   @id @default(uuid())
+  teacher_id   String
+  learner_id   String
+  teacher      User     @relation("TeacherSessions", fields: [teacher_id], references: [id])
+  learner      User     @relation("LearnerSessions", fields: [learner_id], references: [id])
+  scheduled_at DateTime
+  status       String   // pending, accepted, rejected, completed, cancelled
+  initiated_by String?  // ID of the user who started the request
+  tokens_used  Int
+  created_at   DateTime @default(now())
+  
+  review       Review?
+  transactions TokenTransaction[]
+
+  @@map("ServiceSession") 
+}
+
+model TokenTransaction {
+  id         String   @id @default(uuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id])
+  type       String   // earned, spent, purchased
+  amount     Int
+  session_id String?
+  session    SessionModel? @relation(fields: [session_id], references: [id])
+  created_at DateTime @default(now())
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  session_id String   @unique
+  session    SessionModel  @relation(fields: [session_id], references: [id])
+  rating     Int
+  comment    String?
+  created_at DateTime @default(now())
+}
+
+model TeachSkill {
+  id           String   @id @default(uuid())
+  user_id      String
+  user         User     @relation(fields: [user_id], references: [id])
+  category     String
+  skill_name   String
+  level        String   // Beginner, Intermediate, Expert
+  experience   Int      // Years
+  mode         String   // Online, Offline
+  language     String
+  availability String   // JSON string for slots
+  created_at   DateTime @default(now())
+}
+
+model LearnSkill {
+  id                  String   @id @default(uuid())
+  user_id             String
+  user                User     @relation(fields: [user_id], references: [id])
+  category            String
+  skill_name          String
+  desired_level       String
+  mode_preference     String
+  language_preference String
+  availability        String   // JSON string
+  created_at          DateTime @default(now())
+}
+
+model TokenBalance {
+  user_id String @id
+  user    User   @relation(fields: [user_id], references: [id])
+  balance Int    @default(0) // Default starting tokens?
+}
