@@ -1,51 +1,49 @@
-'use client'
+"use client"
 
-import Sidebar from '@/components/dashboard/Sidebar'
-import { Menu } from 'lucide-react'
 import { useState } from 'react'
+import Sidebar from '@/components/dashboard/Sidebar'
+import { Menu, X } from 'lucide-react'
+import { Logo } from '@/components/ui/Logo'
+import Link from 'next/link'
 
-export default function DashboardLayout({
-    children,
-}: {
-    children: React.ReactNode
-}) {
-    const [sidebarOpen, setSidebarOpen] = useState(false)
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+    const [mobileOpen, setMobileOpen] = useState(false)
 
     return (
-        <div className="flex h-screen bg-black text-white overflow-hidden">
-            {/* Mobile Sidebar Overlay */}
-            {sidebarOpen && (
-                <div
-                    className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-                    onClick={() => setSidebarOpen(false)}
-                />
-            )}
-
-            {/* Sidebar */}
-            <aside
-                className={`fixed inset-y-4 left-4 z-50 w-64 transform rounded-2xl border border-white/5 bg-black/20 backdrop-blur-xl transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-                    } glass shadow-2xl`}
-            >
-                <div className="h-full overflow-hidden rounded-2xl">
-                    <Sidebar />
-                </div>
+        <div className="flex min-h-screen bg-[#030303] text-white">
+            {/* Desktop Sidebar */}
+            <aside className="hidden md:flex fixed inset-y-0 left-0 z-40 w-64 flex-col border-r border-white/[0.04] bg-[#060606]/80 backdrop-blur-xl">
+                <Sidebar />
             </aside>
 
+            {/* Mobile Sidebar Overlay */}
+            {mobileOpen && (
+                <div className="fixed inset-0 z-50 md:hidden">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+                    <aside className="absolute inset-y-0 left-0 w-64 border-r border-white/[0.04] bg-[#060606] shadow-2xl animate-slide-in-right">
+                        <Sidebar />
+                    </aside>
+                </div>
+            )}
+
             {/* Main Content */}
-            <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex flex-1 flex-col md:pl-64">
                 {/* Mobile Header */}
-                <header className="flex h-16 items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-md px-4 lg:hidden">
-                    <div className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">SkillUNO</div>
-                    <button onClick={() => setSidebarOpen(true)} className="p-2 text-zinc-400 hover:text-white">
-                        <Menu className="h-6 w-6" />
+                <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/[0.04] bg-[#030303]/80 backdrop-blur-xl px-4 py-3 md:hidden">
+                    <Link href="/">
+                        <Logo />
+                    </Link>
+                    <button
+                        onClick={() => setMobileOpen(!mobileOpen)}
+                        className="rounded-lg p-2 text-zinc-400 hover:text-white hover:bg-white/[0.04] transition-all"
+                    >
+                        {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                     </button>
                 </header>
 
                 {/* Page Content */}
-                <main className="flex-1 overflow-auto p-4 md:p-8">
-                    <div className="mx-auto max-w-7xl animate-in fade-in zoom-in duration-500">
-                        {children}
-                    </div>
+                <main className="flex-1 px-4 md:px-8 py-6 md:py-8 max-w-7xl mx-auto w-full">
+                    {children}
                 </main>
             </div>
         </div>

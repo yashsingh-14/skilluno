@@ -55,20 +55,33 @@ export default function VideoCall({ sessionId, role, userId }: { sessionId: stri
 
                 newPeer.on('open', (id) => {
                     setStatus(`Waiting for ${otherRole}...`)
-                    // Try to connect automatically if we are the caller (optional logic)
-                    // But for now, let's keep it simple: Wait for manual connection
-                    connectToPeer(newPeer, stream)
+                    // Manual connection only now
                 })
 
                 newPeer.on('call', (call) => {
                     // INCOMING CALL LOGIC
                     setIncomingCall(call)
                     setStatus('Incoming Call...')
+                    playRingtone('incoming') // START RINGING
                 })
 
-                newPeer.on('error', (err) => {
+                newPeer.on('error', (err: any) => {
                     console.error(err)
-                    setStatus('Connection Error / Peer Not Found')
+                    if (err.type === 'unavailable-id') {
+                        setStatus('Connection busy, retrying...')
+                        setTimeout(() => {
+                            if (!newPeer.destroyed) newPeer.destroy()
+                            // Refetch logic or reload is safer for full reset, but recursive init is tricky in useEffect.
+                            // Simplest dev fix: just reload page if stuck, or wait.
+                            // Better: use a random suffix if sticky. 
+                            // BUT for our logic, ID must be exact.
+                            // So let's just ask user to reload if it persists.
+                            setStatus('Connection zombie detected. Reloading...')
+                            setTimeout(() => window.location.reload(), 1000)
+                        }, 2000)
+                    } else {
+                        setStatus('Connection Error / Peer Not Found')
+                    }
                 })
             })
             .catch(err => {
@@ -77,45 +90,64 @@ export default function VideoCall({ sessionId, role, userId }: { sessionId: stri
             })
 
         return () => {
-            handleEndCall()
+            cleanupCall()
         }
     }, [])
 
     const connectToPeer = (currentPeer: Peer, stream: MediaStream) => {
         // Try to call the other person
+        setStatus('Calling...')
+        playRingtone('outgoing') // START DIALING TONE
+
         const call = currentPeer.call(targetPeerId, stream)
+        setCallObject(call)
 
         if (call) {
-            setStatus('Calling...')
             call.on('stream', (remoteStream) => {
+                stopRingtone() // STOP TONE ON CONNECT
                 setRemoteStream(remoteStream)
                 if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream
                 setStatus('Connected')
             })
             call.on('close', () => {
+                stopRingtone()
                 setStatus('Call Ended')
                 setRemoteStream(null)
+                setCallObject(null)
             })
             call.on('error', () => {
                 // Retry?
-                setTimeout(() => connectToPeer(currentPeer, stream), 3000)
+                // stopRingtone() // Keep ringing if just a glitch? No, stop.
+                // setTimeout(() => connectToPeer(currentPeer, stream), 3000)
             })
         }
     }
 
     const answerCall = () => {
+        stopRingtone() // STOP RINGING
         if (incomingCall && myStream) {
             incomingCall.answer(myStream)
+            setCallObject(incomingCall)
+
             incomingCall.on('stream', (remoteStream: any) => {
                 setRemoteStream(remoteStream)
                 if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream
                 setStatus('Connected')
             })
+
+            incomingCall.on('close', () => {
+                setStatus('Call Ended')
+                setRemoteStream(null)
+                setCallObject(null)
+                setIncomingCall(null)
+            })
+
             setIncomingCall(null)
         }
     }
 
     const rejectCall = () => {
+        stopRingtone() // STOP RINGING
         if (incomingCall) {
             incomingCall.close()
             setIncomingCall(null)
@@ -123,15 +155,98 @@ export default function VideoCall({ sessionId, role, userId }: { sessionId: stri
         }
     }
 
-    const handleEndCall = () => {
+    // Cleanup function (without closing window)
+    const cleanupCall = () => {
+        stopRingtone()
+        if (callObject) callObject.close()
+        if (incomingCall) incomingCall.close()
+
         myStream?.getTracks().forEach(track => track.stop())
         peer?.destroy()
-        window.close() // Close the tab/window
+    }
+
+    const handleEndCall = () => {
+        cleanupCall()
+        // Determine if we should close the window or just show "Call Ended"
+        // User asked for "Cut System".
+        // Let's just reload the page or close window depending on context.
+        // For dashboard flow, closing tab is standard.
+        // But let's verify if user wants to stay.
+        // Close window is safest to ensure Peer destroy.
+        window.close()
     }
 
     // Manual Retry Button
     const retryConnection = () => {
         if (peer && myStream) connectToPeer(peer, myStream)
+    }
+
+    const [callObject, setCallObject] = useState<any>(null) // Store active outgoing/connected call
+
+    // Audio Refs for Ringing
+    const audioCtxRef = useRef<AudioContext | null>(null);
+    const oscillatorRef = useRef<OscillatorNode | null>(null);
+    const gainNodeRef = useRef<GainNode | null>(null);
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Sound Logic: Web Audio API (No files needed)
+    const playRingtone = (type: 'incoming' | 'outgoing') => {
+        stopRingtone(); // Ensure clean start
+        try {
+            const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+            if (!AudioContext) return;
+
+            const ctx = new AudioContext();
+            audioCtxRef.current = ctx;
+            const gainNode = ctx.createGain();
+            gainNode.connect(ctx.destination);
+            gainNodeRef.current = gainNode;
+
+            if (type === 'incoming') {
+                // Classic Phone Ring: Trrring... Trrring...
+                const playBeep = () => {
+                    if (ctx.state === 'closed') return;
+                    const osc = ctx.createOscillator();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, ctx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.1); // Modulation
+                    osc.connect(gainNode);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 1.5); // Long ring
+                    oscillatorRef.current = osc;
+                };
+                playBeep();
+                intervalRef.current = setInterval(playBeep, 3000);
+                gainNode.gain.value = 0.5;
+            } else {
+                // Outgoing: Beep... Beep...
+                const playTone = () => {
+                    if (ctx.state === 'closed') return;
+                    const osc = ctx.createOscillator();
+                    osc.type = 'sine';
+                    osc.frequency.value = 440;
+                    osc.connect(gainNode);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.8);
+                    oscillatorRef.current = osc;
+                };
+                playTone();
+                intervalRef.current = setInterval(playTone, 2000);
+                gainNode.gain.value = 0.2;
+            }
+        } catch (e) {
+            console.error("Audio error", e)
+        }
+    }
+
+    const stopRingtone = () => {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        if (oscillatorRef.current) {
+            try { oscillatorRef.current.stop(); } catch (e) { }
+        }
+        if (audioCtxRef.current) {
+            audioCtxRef.current.close();
+        }
     }
 
     const toggleMute = () => {
@@ -191,14 +306,43 @@ export default function VideoCall({ sessionId, role, userId }: { sessionId: stri
                 )}
 
                 {/* Remote Video (Full Size) */}
-                {remoteStream ? (
+                {/* Permission Error State */}
+                {status.includes('Permission Denied') ? (
+                    <div className="h-full w-full flex flex-col items-center justify-center bg-zinc-900 rounded-2xl border border-red-900/50 gap-6 p-8 text-center">
+                        <div className="h-20 w-20 bg-red-500/10 rounded-full flex items-center justify-center animate-pulse">
+                            <VideoOff className="h-10 w-10 text-red-500" />
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="text-xl font-bold text-red-500">Camera Access Blocked</h3>
+                            <p className="text-zinc-400 max-w-md">
+                                Please allow camera and microphone access to join the call.
+                            </p>
+                        </div>
+                        <div className="text-sm text-zinc-500 bg-black/50 p-4 rounded-lg text-left space-y-2">
+                            <p>1. Click the 🔒 <span className="text-white font-bold">Lock Icon</span> in your browser URL bar.</p>
+                            <p>2. Toggle <span className="text-white font-bold">Camera</span> & <span className="text-white font-bold">Microphone</span> to 'Allow'.</p>
+                            <p>3. Refresh this page.</p>
+                        </div>
+                        <button onClick={() => window.location.reload()} className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-full transition-colors">
+                            Refresh Page
+                        </button>
+                    </div>
+                ) : remoteStream ? (
                     <video ref={remoteVideoRef} autoPlay className="h-full w-full object-contain rounded-2xl bg-zinc-900" />
                 ) : (
                     <div className="h-full w-full flex flex-col items-center justify-center bg-zinc-900 rounded-2xl border border-dashed border-zinc-800 text-zinc-500 gap-4">
                         <Loader2 className="h-12 w-12 animate-spin text-purple-600" />
                         <p>Waiting for the other person to join...</p>
-                        <button onClick={retryConnection} className="text-sm text-purple-400 hover:underline">
-                            Click here to retry connection
+                        <p className="text-xs text-zinc-600 max-w-xs text-center">
+                            Make sure the other person is also on this page.
+                        </p>
+
+                        {/* Explicit Call Button for everyone to ensure connection triggers */}
+                        <button
+                            onClick={retryConnection}
+                            className="px-6 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-full font-bold transition-all shadow-lg hover:shadow-purple-500/20 active:scale-95"
+                        >
+                            Connect To Peer
                         </button>
                     </div>
                 )}

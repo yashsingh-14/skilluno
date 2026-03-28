@@ -1,0 +1,16 @@
+🔍 Verifying Latest Session & Transactions...
+
+📋 Latest Session ID: 9d8dd389-0fd7-4fa3-aa66-b32800231792
+   Status: VERIFY_PENDING
+   Teacher: suraj yadav (surajyadav08681@gmail.com)
+   Learner: Yash Singh (ys181544@gmail.com)
+   Tokens Used: 10
+
+💰 Transactions Linked to this Session:
+   ❌ No transactions recorded for this session.
+
+💳 Current Wallet Balances:
+   Teacher Balance: 0 tokens
+   Learner Balance: 0 tokens
+
+✅ Verification Complete.

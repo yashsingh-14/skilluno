@@ -1,12 +1,21 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
-import { getUserFromRequest } from '@/lib/auth-server'
+import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth-options'
 
 export async function POST(request: Request) {
     try {
-        const user = await getUserFromRequest(request)
-        if (!user) {
+        const authSession = await getServerSession(authOptions)
+        if (!authSession?.user?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { email: authSession.user.email }
+        })
+
+        if (!user) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 })
         }
 
         const { session_id, action } = await request.json()
@@ -15,22 +24,22 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
         }
 
-        const session = await prisma.session.findUnique({
+        const sessionData = await prisma.sessionModel.findUnique({
             where: { id: session_id }
         })
 
-        if (!session) {
+        if (!sessionData) {
             return NextResponse.json({ error: 'Session not found' }, { status: 404 })
         }
 
         // Authorization checks
-        const isTeacher = session.teacher_id === user.userId
-        const isLearner = session.learner_id === user.userId
+        const isTeacher = sessionData.teacher_id === user.id
+        const isLearner = sessionData.learner_id === user.id
 
         if (action === 'accept' || action === 'reject') {
             if (!isTeacher) return NextResponse.json({ error: 'Only teacher can accept/reject' }, { status: 403 })
 
-            await prisma.session.update({
+            await prisma.sessionModel.update({
                 where: { id: session_id },
                 data: { status: action === 'accept' ? 'accepted' : 'rejected' }
             })
@@ -39,41 +48,37 @@ export async function POST(request: Request) {
         }
 
         if (action === 'complete') {
-            // Can be triggered by both, but usually automatically or by teacher. Let's say Teacher marks complete.
             if (!isTeacher) return NextResponse.json({ error: 'Only teacher can mark complete' }, { status: 403 })
 
             // TRANSACTION: Transfer Tokens
-            // 1. Deduct from Learner
-            // 2. Add to Teacher
-
             await prisma.$transaction([
-                prisma.session.update({
+                prisma.sessionModel.update({
                     where: { id: session_id },
                     data: { status: 'completed' }
                 }),
                 prisma.tokenBalance.update({
-                    where: { user_id: session.learner_id },
-                    data: { balance: { decrement: session.tokens_used } }
+                    where: { user_id: sessionData.learner_id },
+                    data: { balance: { decrement: sessionData.tokens_used } }
                 }),
                 prisma.tokenBalance.update({
-                    where: { user_id: session.teacher_id },
-                    data: { balance: { increment: session.tokens_used } }
+                    where: { user_id: sessionData.teacher_id },
+                    data: { balance: { increment: sessionData.tokens_used } }
                 }),
                 // Record Transactions
                 prisma.tokenTransaction.create({
                     data: {
-                        user_id: session.learner_id,
+                        user_id: sessionData.learner_id,
                         type: 'spent',
-                        amount: session.tokens_used,
-                        session_id: session.id
+                        amount: sessionData.tokens_used,
+                        session_id: sessionData.id
                     }
                 }),
                 prisma.tokenTransaction.create({
                     data: {
-                        user_id: session.teacher_id,
+                        user_id: sessionData.teacher_id,
                         type: 'earned',
-                        amount: session.tokens_used,
-                        session_id: session.id
+                        amount: sessionData.tokens_used,
+                        session_id: sessionData.id
                     }
                 })
             ])

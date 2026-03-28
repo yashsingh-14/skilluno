@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, Check, X, Clock, Calendar, User, MessageSquare, Video, DollarSign } from 'lucide-react'
 import { TiltCard } from '@/components/ui/TiltCard'
 import ChatWindow from '@/components/dashboard/ChatWindow'
+import { useToast } from '@/components/ui/Toast'
 
 interface Session {
     id: string
@@ -23,6 +24,7 @@ export default function RequestsPage() {
     const [loading, setLoading] = useState(true)
     const [processing, setProcessing] = useState<string | null>(null)
     const [activeChat, setActiveChat] = useState<{ id: string, name: string, sessionId: string } | null>(null)
+    const { toast } = useToast()
 
     useEffect(() => {
         fetchRequests()
@@ -30,7 +32,7 @@ export default function RequestsPage() {
 
     const fetchRequests = async () => {
         try {
-            const res = await fetch('/api/requests')
+            const res = await fetch('/api/requests?t=' + Date.now())
             const data = await res.json()
             if (data.sessions) {
                 setSessions(data.sessions)
@@ -105,8 +107,20 @@ export default function RequestsPage() {
                         onClose={() => setActiveChat(null)}
                         sessionId={activeChat.sessionId}
                         onStartCall={() => {
-                            // Open Call Page
-                            window.open(`/call/${activeChat.sessionId}`, '_blank')
+                            // Determine role based on session participants (we know current userId)
+                            // But `activeChat` doesn't have session details directly... 
+                            // Actually we can deduce it: if activeChat.id (other user) is the teacher, I am the learner? 
+                            // Wait, activeChat is just `{id, name, sessionId}`.
+
+                            // Better approach: We know valid logic from the "Join Call" button just below.
+                            // But we need `isMeTeacher` context. 
+                            // `sessions` is available in scope. 
+                            const session = sessions.find(s => s.id === activeChat.sessionId)
+                            if (session) {
+                                const isMeTeacher = session.teacher_id === userId
+                                const role = isMeTeacher ? 'teacher' : 'student' // 'student' matches CallPage logic (calls it 'student' not 'learner')
+                                window.open(`/call/${activeChat.sessionId}?role=${role}`, '_blank')
+                            }
                         }}
                     />
                 )}
@@ -136,7 +150,7 @@ export default function RequestsPage() {
                                     <div className="h-full rounded-xl bg-zinc-900/95 p-5 backdrop-blur-sm flex flex-col justify-between">
                                         <div className="flex items-center gap-4 mb-4">
                                             <div className="h-12 w-12 rounded-full bg-zinc-800 overflow-hidden border border-zinc-700">
-                                                {otherUser.image ? <img src={otherUser.image} className="h-full w-full object-cover" /> : <User className="h-6 w-6 m-auto text-zinc-500" />}
+                                                {otherUser.image ? <img src={otherUser.image} referrerPolicy="no-referrer" className="h-full w-full object-cover" /> : <User className="h-6 w-6 m-auto text-zinc-500" />}
                                             </div>
                                             <div>
                                                 <h4 className="font-semibold text-white">{otherUser.name || 'User'}</h4>
@@ -190,7 +204,7 @@ export default function RequestsPage() {
                                 <div key={session.id} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5 flex flex-col gap-4 opacity-75 grayscale-[50%] hover:grayscale-0 transition-all">
                                     <div className="flex items-center gap-4">
                                         <div className="h-10 w-10 rounded-full bg-zinc-800 overflow-hidden border border-zinc-700">
-                                            {otherUser.image ? <img src={otherUser.image} className="h-full w-full object-cover" /> : <User className="h-5 w-5 m-auto text-zinc-500" />}
+                                            {otherUser.image ? <img src={otherUser.image} referrerPolicy="no-referrer" className="h-full w-full object-cover" /> : <User className="h-5 w-5 m-auto text-zinc-500" />}
                                         </div>
                                         <div>
                                             <h4 className="font-medium text-white">{otherUser.name || 'User'}</h4>
@@ -229,7 +243,7 @@ export default function RequestsPage() {
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-4">
                                             <div className="h-10 w-10 rounded-full bg-zinc-800 overflow-hidden border border-zinc-700">
-                                                {otherUser.image ? <img src={otherUser.image} className="h-full w-full object-cover" /> : <User className="h-5 w-5 m-auto text-zinc-500" />}
+                                                {otherUser.image ? <img src={otherUser.image} referrerPolicy="no-referrer" className="h-full w-full object-cover" /> : <User className="h-5 w-5 m-auto text-zinc-500" />}
                                             </div>
                                             <div>
                                                 <h4 className="font-medium text-white">{otherUser.name || 'User'}</h4>
@@ -237,15 +251,19 @@ export default function RequestsPage() {
                                                     <Calendar className="h-3 w-3" />
                                                     <span>{new Date(session.scheduled_at).toLocaleDateString()}</span>
                                                 </div>
+                                                <div className="text-[10px] uppercase tracking-wider font-mono text-zinc-500 mt-1">
+                                                    Status: <span className={session.status === 'verify_pending' ? 'text-yellow-500 font-bold' : ''}>{session.status}</span>
+                                                </div>
                                             </div>
                                         </div>
-                                        {/* Status Badge */}
-                                        {session.status === 'verify_pending' && (
-                                            <span className="px-3 py-1 bg-yellow-500/10 text-yellow-500 rounded-full text-xs font-semibold border border-yellow-500/20">
-                                                Verify Pending
-                                            </span>
-                                        )}
                                     </div>
+
+                                    {/* Status Badge */}
+                                    {session.status === 'verify_pending' && (
+                                        <span className="px-3 py-1 bg-yellow-500/10 text-yellow-500 rounded-full text-xs font-semibold border border-yellow-500/20">
+                                            Verify Pending
+                                        </span>
+                                    )}
 
                                     {/* Quick Actions Row */}
                                     <div className="flex items-center gap-2 mt-2">
@@ -273,63 +291,70 @@ export default function RequestsPage() {
                                     </div>
 
                                     {/* 3. Completion Actions (Context Aware) */}
-                                    {session.status === 'scheduled' && isMeTeacher && (
-                                        <button
-                                            onClick={async () => {
-                                                if (confirm('Are you sure the session is done?')) {
-                                                    const res = await fetch('/api/sessions/complete', {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({ sessionId: session.id, action: 'mark_complete' })
-                                                    })
-                                                    if (res.ok) {
-                                                        alert("Session Marked as Complete! Wait for student to verify.")
-                                                        fetchRequests()
-                                                    } else {
-                                                        const data = await res.json()
-                                                        alert("Error: " + (data.error || 'Request failed'))
+                                    {
+                                        session.status === 'scheduled' && isMeTeacher && (
+                                            <button
+                                                onClick={async () => {
+                                                    if (confirm('Are you sure the session is done?')) {
+                                                        const res = await fetch('/api/sessions/complete', {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ sessionId: session.id, action: 'mark_complete' })
+                                                        })
+                                                        if (res.ok) {
+                                                            toast('Session marked complete! Waiting for student verification.', 'success')
+                                                            fetchRequests()
+                                                        } else {
+                                                            const data = await res.json()
+                                                            toast(data.error || 'Request failed', 'error')
+                                                        }
                                                     }
-                                                }
-                                            }}
-                                            className="w-full flex items-center justify-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 py-2.5 text-sm font-medium text-white shadow-lg shadow-indigo-500/20 active:scale-95 transition-all"
-                                        >
-                                            <Check className="h-4 w-4" /> Mark Complete
-                                        </button>
-                                    )}
+                                                }}
+                                                className="w-full flex items-center justify-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 py-2.5 text-sm font-medium text-white shadow-lg shadow-indigo-500/20 active:scale-95 transition-all"
+                                            >
+                                                <Check className="h-4 w-4" /> Mark Complete
+                                            </button>
+                                        )
+                                    }
 
-                                    {session.status === 'verify_pending' && !isMeTeacher && (
-                                        <button
-                                            onClick={async () => {
-                                                if (confirm('Confirm completion and pay 40 tokens?')) {
-                                                    const res = await fetch('/api/sessions/complete', {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({ sessionId: session.id, action: 'verify' })
-                                                    })
-                                                    if (res.ok) {
-                                                        alert("Payment Successful! Session Completed.")
-                                                        fetchRequests()
-                                                    } else {
-                                                        const data = await res.json()
-                                                        alert("Error: " + (data.error || 'Request failed'))
+                                    {
+                                        session.status === 'verify_pending' && !isMeTeacher && (
+                                            <button
+                                                onClick={async () => {
+                                                    if (confirm('Confirm completion and pay 40 tokens?')) {
+                                                        const res = await fetch('/api/sessions/complete', {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ sessionId: session.id, action: 'verify' })
+                                                        })
+                                                        if (res.ok) {
+                                                            toast('Payment successful! Session completed. 🎉', 'success')
+                                                            fetchRequests()
+                                                        } else {
+                                                            const data = await res.json()
+                                                            toast(data.error || 'Request failed', 'error')
+                                                        }
                                                     }
-                                                }
-                                            }}
-                                            className="w-full flex items-center justify-center gap-2 rounded-lg bg-green-600 hover:bg-green-500 py-2.5 text-sm font-bold text-white shadow-lg shadow-green-500/20 active:scale-95 transition-all animate-pulse"
-                                        >
-                                            <DollarSign className="h-4 w-4" /> Pay & Complete
-                                        </button>
-                                    )}
+                                                }}
+                                                className="w-full flex items-center justify-center gap-2 rounded-lg bg-green-600 hover:bg-green-500 py-2.5 text-sm font-bold text-white shadow-lg shadow-green-500/20 active:scale-95 transition-all animate-pulse"
+                                            >
+                                                <DollarSign className="h-4 w-4" /> Pay & Complete
+                                            </button>
+                                        )
+                                    }
 
-                                    {session.status === 'verify_pending' && isMeTeacher && (
-                                        <div className="text-center text-xs text-zinc-500 italic">Waiting for student confirmation...</div>
-                                    )}
+                                    {
+                                        session.status === 'verify_pending' && isMeTeacher && (
+                                            <div className="text-center text-xs text-zinc-500 italic">Waiting for student confirmation...</div>
+                                        )
+                                    }
                                 </div>
                             )
                         })}
                     </div>
-                )}
-            </section>
-        </div>
+                )
+                }
+            </section >
+        </div >
     )
 }

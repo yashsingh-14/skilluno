@@ -1,134 +1,218 @@
 'use client'
 
-import { useSession, signOut } from "next-auth/react"
-import { LogOut, User, Mail, Shield, Bell, Moon } from "lucide-react"
-import { TiltCard } from "@/components/ui/TiltCard"
+import { useEffect, useState } from 'react'
+import { useSession, signOut } from 'next-auth/react'
+import { useToast } from '@/components/ui/Toast'
+import { User, Mail, MapPin, Globe, Star, Loader2, Save, LogOut, Shield, Trash2, Crown, Calendar } from 'lucide-react'
+
+interface Profile {
+    id: string
+    name: string
+    email: string
+    image?: string
+    languages?: string
+    location?: string
+    rating_avg: number
+    created_at: string
+    _count: {
+        teachSkills: number
+        learnSkills: number
+        sessionsAsTeacher: number
+        sessionsAsLearner: number
+    }
+}
 
 export default function SettingsPage() {
     const { data: session } = useSession()
+    const { toast } = useToast()
+    const [profile, setProfile] = useState<Profile | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [saving, setSaving] = useState(false)
+
+    // Editable fields
+    const [name, setName] = useState('')
+    const [location, setLocation] = useState('')
+    const [languages, setLanguages] = useState('')
+
+    useEffect(() => {
+        fetch('/api/profile')
+            .then(r => r.json())
+            .then(data => {
+                if (data.user) {
+                    setProfile(data.user)
+                    setName(data.user.name || '')
+                    setLocation(data.user.location || '')
+                    setLanguages(data.user.languages || '')
+                }
+            })
+            .catch(console.error)
+            .finally(() => setLoading(false))
+    }, [])
+
+    const handleSave = async () => {
+        setSaving(true)
+        try {
+            const res = await fetch('/api/profile', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, location, languages })
+            })
+            if (res.ok) {
+                toast('Profile updated! ✨', 'success')
+            } else {
+                toast('Failed to update', 'error')
+            }
+        } catch (e) {
+            toast('Something went wrong', 'error')
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    if (loading) return (
+        <div className="flex h-96 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+        </div>
+    )
+
+    const totalSessions = (profile?._count.sessionsAsTeacher || 0) + (profile?._count.sessionsAsLearner || 0)
+    const memberSince = profile ? new Date(profile.created_at).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : ''
 
     return (
-        <div className="space-y-6">
+        <div className="max-w-2xl mx-auto space-y-8 animate-fade-in-up">
+            {/* Header */}
             <div>
-                <h1 className="text-2xl font-bold tracking-tight text-white">Settings</h1>
-                <p className="text-zinc-400">Manage your account preferences and settings.</p>
+                <h1 className="text-3xl font-bold tracking-tight gradient-text-purple">Settings</h1>
+                <p className="text-sm text-zinc-500 mt-1">Manage your profile and preferences.</p>
             </div>
 
-            {/* Profile Section */}
-            <TiltCard className="rounded-2xl bg-zinc-900/40 p-1 glass-card">
-                <div className="rounded-xl bg-gradient-to-br from-zinc-800/30 to-zinc-900/30 p-6 backdrop-blur-sm">
-                    <h2 className="mb-4 text-lg font-bold text-white tracking-tight">Profile</h2>
-                    <div className="flex items-center gap-6">
-                        <div className="relative h-24 w-24 overflow-hidden rounded-full border-2 border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.3)]">
-                            {session?.user?.image ? (
-                                <img
-                                    src={session.user.image}
-                                    alt={session.user.name || "Profile"}
-                                    className="h-full w-full object-cover"
-                                />
+            {/* Profile Card */}
+            <div className="rounded-2xl border border-white/[0.04] bg-white/[0.01] p-6 animate-fade-in-up delay-100">
+                <div className="flex items-center gap-5 mb-6">
+                    <div className="relative">
+                        <div className="h-20 w-20 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-2xl font-bold text-white overflow-hidden ring-4 ring-purple-500/20">
+                            {profile?.image ? (
+                                <img src={profile.image} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
                             ) : (
-                                <div className="flex h-full w-full items-center justify-center bg-zinc-800">
-                                    <User className="h-8 w-8 text-zinc-400" />
-                                </div>
+                                profile?.name?.charAt(0)?.toUpperCase() || '?'
                             )}
                         </div>
-                        <div className="space-y-1">
-                            <h3 className="text-2xl font-bold text-white text-glow">{session?.user?.name}</h3>
-                            <p className="text-sm font-medium text-purple-400">{session?.user?.email}</p>
-                            <span className="inline-flex items-center rounded-full bg-green-500/10 px-3 py-1 text-xs font-bold text-green-400 ring-1 ring-inset ring-green-500/30 shadow-[0_0_10px_rgba(34,197,94,0.2)]">
-                                Verified Account
+                        {profile?.rating_avg && profile.rating_avg > 0 && (
+                            <div className="absolute -bottom-1 -right-1 flex items-center gap-0.5 rounded-full bg-zinc-900 border border-yellow-500/30 px-1.5 py-0.5">
+                                <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                                <span className="text-[10px] font-bold text-yellow-400">{profile.rating_avg.toFixed(1)}</span>
+                            </div>
+                        )}
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-white">{profile?.name}</h2>
+                        <p className="text-sm text-zinc-500">{profile?.email}</p>
+                        <div className="flex flex-wrap items-center gap-3 mt-2 text-[11px] text-zinc-500">
+                            <span className="flex items-center gap-1 text-purple-400">
+                                <Crown className="h-3 w-3" />
+                                {profile?._count.teachSkills || 0} teaching • {profile?._count.learnSkills || 0} learning
+                            </span>
+                            <span>{totalSessions} sessions</span>
+                            <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                Since {memberSince}
                             </span>
                         </div>
                     </div>
                 </div>
-            </TiltCard>
 
-            {/* Account Details */}
-            <div className="grid gap-6 md:grid-cols-2">
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 backdrop-blur-sm">
-                    <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
-                        <User className="h-5 w-5 text-purple-400" />
-                        Personal Information
-                    </h2>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="mb-1 block text-sm font-medium text-zinc-400">Display Name</label>
+                {/* Editable Fields */}
+                <div className="space-y-4">
+                    <div>
+                        <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1.5 block">Display Name</label>
+                        <div className="relative">
+                            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600" />
                             <input
                                 type="text"
-                                value={session?.user?.name || ''}
-                                disabled
-                                className="w-full rounded-md border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-white placeholder-zinc-500 focus:border-purple-500 focus:bg-zinc-900 focus:outline-none"
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                className="input-premium pl-10 w-full"
+                                placeholder="Your name"
                             />
                         </div>
-                        <div>
-                            <label className="mb-1 block text-sm font-medium text-zinc-400">Email Address</label>
-                            <div className="relative">
-                                <input
-                                    type="email"
-                                    value={session?.user?.email || ''}
-                                    disabled
-                                    className="w-full rounded-md border border-zinc-700 bg-zinc-800/50 pl-10 pr-3 py-2 text-white placeholder-zinc-500 focus:border-purple-500 focus:bg-zinc-900 focus:outline-none"
-                                />
-                                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-zinc-500" />
-                            </div>
-                        </div>
                     </div>
-                </div>
 
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 backdrop-blur-sm">
-                    <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
-                        <Shield className="h-5 w-5 text-blue-400" />
-                        Preferences
-                    </h2>
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between rounded-lg border border-zinc-800 p-3">
-                            <div className="flex items-center gap-3">
-                                <div className="rounded-full bg-zinc-800 p-2">
-                                    <Bell className="h-4 w-4 text-zinc-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-white">Notifications</p>
-                                    <p className="text-xs text-zinc-500">Receive email updates</p>
-                                </div>
-                            </div>
-                            <div className="h-5 w-9 rounded-full bg-purple-600">
-                                <div className="h-5 w-5 translate-x-4 rounded-full bg-white shadow-sm" />
-                            </div>
-                        </div>
-                        <div className="flex items-center justify-between rounded-lg border border-zinc-800 p-3">
-                            <div className="flex items-center gap-3">
-                                <div className="rounded-full bg-zinc-800 p-2">
-                                    <Moon className="h-4 w-4 text-zinc-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-white">Dark Mode</p>
-                                    <p className="text-xs text-zinc-500">Always enabled</p>
-                                </div>
-                            </div>
-                            <div className="h-5 w-9 rounded-full bg-purple-600">
-                                <div className="h-5 w-5 translate-x-4 rounded-full bg-white shadow-sm" />
-                            </div>
+                    <div>
+                        <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1.5 block">Location</label>
+                        <div className="relative">
+                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600" />
+                            <input
+                                type="text"
+                                value={location}
+                                onChange={e => setLocation(e.target.value)}
+                                className="input-premium pl-10 w-full"
+                                placeholder="City, Country"
+                            />
                         </div>
                     </div>
+
+                    <div>
+                        <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1.5 block">Languages</label>
+                        <div className="relative">
+                            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600" />
+                            <input
+                                type="text"
+                                value={languages}
+                                onChange={e => setLanguages(e.target.value)}
+                                className="input-premium pl-10 w-full"
+                                placeholder="English, Hindi, Marathi..."
+                            />
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-3 text-sm font-bold text-white hover:from-purple-500 hover:to-indigo-500 transition-all active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-purple-600/20"
+                    >
+                        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        {saving ? 'Saving...' : 'Save Changes'}
+                    </button>
                 </div>
             </div>
 
-            {/* Danger Zone */}
-            <div className="rounded-xl border border-red-900/20 bg-red-900/5 p-6 backdrop-blur-sm">
-                <h2 className="mb-4 text-lg font-semibold text-red-500">Danger Zone</h2>
-                <div className="flex items-center justify-between">
+            {/* Account Section */}
+            <div className="rounded-2xl border border-white/[0.04] bg-white/[0.01] p-6 space-y-4 animate-fade-in-up delay-200">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-zinc-400" />
+                    Account
+                </h3>
+
+                <div className="flex items-center justify-between rounded-xl bg-white/[0.02] px-4 py-3 border border-white/[0.04]">
                     <div>
-                        <p className="text-sm font-medium text-white">Sign Out</p>
-                        <p className="text-xs text-zinc-500">Sign out of your account on this device</p>
+                        <p className="text-sm font-medium text-white">Email</p>
+                        <p className="text-xs text-zinc-500">{profile?.email}</p>
                     </div>
-                    <button
-                        onClick={() => signOut({ callbackUrl: '/auth/login' })}
-                        className="flex items-center gap-2 rounded-md bg-red-500/10 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-500/20 transition-colors"
-                    >
-                        <LogOut className="h-4 w-4" />
-                        Sign Out
-                    </button>
+                    <Mail className="h-4 w-4 text-zinc-600" />
                 </div>
+
+                <button
+                    onClick={() => signOut({ callbackUrl: '/' })}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-white/[0.04] px-4 py-3 text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-all border border-white/[0.06]"
+                >
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                </button>
+            </div>
+
+            {/* Danger Zone */}
+            <div className="rounded-2xl border border-red-500/10 bg-red-500/[0.02] p-6 animate-fade-in-up delay-300">
+                <h3 className="text-sm font-semibold text-red-400 flex items-center gap-2 mb-3">
+                    <Trash2 className="h-4 w-4" />
+                    Danger Zone
+                </h3>
+                <p className="text-xs text-zinc-500 mb-3">Once you delete your account, there is no going back.</p>
+                <button
+                    className="rounded-xl bg-red-500/10 px-4 py-2 text-xs font-medium text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-all"
+                    onClick={() => toast('Account deletion coming soon', 'info')}
+                >
+                    Delete Account
+                </button>
             </div>
         </div>
     )

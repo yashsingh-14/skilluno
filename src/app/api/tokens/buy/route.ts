@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
-import { getUserFromRequest } from '@/lib/auth-server'
+import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth-options'
 import Razorpay from 'razorpay'
 
 // Use environment variables for keys to be "Real"
@@ -14,19 +15,22 @@ const razorpay = new Razorpay({
 
 export async function POST(request: Request) {
     try {
-        const user = await getUserFromRequest(request)
-        if (!user) {
+        const session = await getServerSession(authOptions)
+        if (!session?.user?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { email: session.user.email }
+        })
+
+        if (!user) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 })
         }
 
         const { amount, tokens } = await request.json()
 
         // 1. Create Razorpay Order
-        // In a real scenario, we create an order ID first, send it to frontend, 
-        // frontend completes payment, then calls a verification endpoint.
-        // For this "Real" simulation without keys, we will create the order structure
-        // but proceed to fulfill for demo purposes if keys are placeholders.
-
         let orderId = 'order_' + Math.random().toString(36).substring(7)
 
         if (process.env.RAZORPAY_KEY) {
@@ -43,14 +47,16 @@ export async function POST(request: Request) {
         }
 
         // 2. Fulfill Transaction (Simulated Completion for seamless demo)
-        await prisma.tokenBalance.update({
-            where: { user_id: user.userId },
-            data: { balance: { increment: tokens } }
+        // Upsert to handle first-time buyers who don't have a TokenBalance yet
+        await prisma.tokenBalance.upsert({
+            where: { user_id: user.id },
+            create: { user_id: user.id, balance: tokens },
+            update: { balance: { increment: tokens } }
         })
 
         await prisma.tokenTransaction.create({
             data: {
-                user_id: user.userId,
+                user_id: user.id,
                 type: 'purchased',
                 amount: tokens,
             }
