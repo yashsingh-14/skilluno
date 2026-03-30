@@ -16,24 +16,22 @@ export const authOptions: NextAuthOptions = {
     },
     callbacks: {
         async signIn({ user, account, profile }) {
-            console.log("👉 SIGNIN CALLBACK:", { user, account, profile });
             return true;
         },
         async session({ session, token }) {
-            console.log("👉 SESSION CALLBACK:", { session, token });
             if (session.user) {
                 session.user.id = token.sub!
             }
             return session
         },
         async jwt({ token, user, account }) {
-            console.log("👉 JWT CALLBACK:", { token, user, account });
             return token;
         }
     },
     pages: {
         signIn: '/auth/login',
+        error: '/auth/login',
     },
-    debug: true,
+    debug: process.env.NODE_ENV === 'development',
     secret: process.env.NEXTAUTH_SECRET,
 }

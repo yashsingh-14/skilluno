@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { Loader2, Mail, Lock, ArrowRight } from 'lucide-react'
@@ -9,8 +9,24 @@ import { Logo } from '@/components/ui/Logo'
 
 export default function LoginPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [loading, setLoading] = useState(false)
+    const [googleLoading, setGoogleLoading] = useState(false)
     const [error, setError] = useState('')
+
+    useEffect(() => {
+        const err = searchParams.get('error')
+        if (err) {
+            const messages: Record<string, string> = {
+                OAuthSignin: 'Error starting Google sign in',
+                OAuthCallback: 'Error during Google callback',
+                OAuthCreateAccount: 'Could not create account',
+                Callback: 'Auth callback error',
+                Default: 'Authentication error',
+            }
+            setError(messages[err] || messages.Default)
+        }
+    }, [searchParams])
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
@@ -137,7 +153,17 @@ export default function LoginPage() {
 
                             <button
                                 type="button"
-                                onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+                                disabled={googleLoading}
+                                onClick={async () => {
+                                    setGoogleLoading(true)
+                                    setError('')
+                                    try {
+                                        await signIn('google', { callbackUrl: '/dashboard' })
+                                    } catch (e) {
+                                        setError('Google sign in failed')
+                                        setGoogleLoading(false)
+                                    }
+                                }}
                                 className="flex w-full items-center justify-center gap-3 rounded-xl bg-white/[0.05] border border-white/[0.08] px-4 py-3 text-sm font-medium text-white hover:bg-white/[0.08] transition-all active:scale-[0.98]"
                             >
                                 <svg className="h-4 w-4" aria-hidden="true" viewBox="0 0 24 24">
