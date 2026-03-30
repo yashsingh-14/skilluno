@@ -295,19 +295,17 @@ export default function RequestsPage() {
                                         session.status === 'scheduled' && isMeTeacher && (
                                             <button
                                                 onClick={async () => {
-                                                    if (confirm('Are you sure the session is done?')) {
-                                                        const res = await fetch('/api/sessions/complete', {
-                                                            method: 'POST',
-                                                            headers: { 'Content-Type': 'application/json' },
-                                                            body: JSON.stringify({ sessionId: session.id, action: 'mark_complete' })
-                                                        })
-                                                        if (res.ok) {
-                                                            toast('Session marked complete! Waiting for student verification.', 'success')
-                                                            fetchRequests()
-                                                        } else {
-                                                            const data = await res.json()
-                                                            toast(data.error || 'Request failed', 'error')
-                                                        }
+                                                    const res = await fetch('/api/sessions/complete', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ sessionId: session.id, action: 'mark_complete' })
+                                                    })
+                                                    if (res.ok) {
+                                                        toast('Session marked complete! Waiting for student verification.', 'success')
+                                                        fetchRequests()
+                                                    } else {
+                                                        const data = await res.json()
+                                                        toast(data.error || 'Request failed', 'error')
                                                     }
                                                 }}
                                                 className="w-full flex items-center justify-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 py-2.5 text-sm font-medium text-white shadow-lg shadow-indigo-500/20 active:scale-95 transition-all"
@@ -321,19 +319,17 @@ export default function RequestsPage() {
                                         session.status === 'verify_pending' && !isMeTeacher && (
                                             <button
                                                 onClick={async () => {
-                                                    if (confirm('Confirm completion and pay 40 tokens?')) {
-                                                        const res = await fetch('/api/sessions/complete', {
-                                                            method: 'POST',
-                                                            headers: { 'Content-Type': 'application/json' },
-                                                            body: JSON.stringify({ sessionId: session.id, action: 'verify' })
-                                                        })
-                                                        if (res.ok) {
-                                                            toast('Payment successful! Session completed. 🎉', 'success')
-                                                            fetchRequests()
-                                                        } else {
-                                                            const data = await res.json()
-                                                            toast(data.error || 'Request failed', 'error')
-                                                        }
+                                                    const res = await fetch('/api/sessions/complete', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ sessionId: session.id, action: 'verify' })
+                                                    })
+                                                    if (res.ok) {
+                                                        toast('Payment successful! Session completed. 🎉', 'success')
+                                                        fetchRequests()
+                                                    } else {
+                                                        const data = await res.json()
+                                                        toast(data.error || 'Request failed', 'error')
                                                     }
                                                 }}
                                                 className="w-full flex items-center justify-center gap-2 rounded-lg bg-green-600 hover:bg-green-500 py-2.5 text-sm font-bold text-white shadow-lg shadow-green-500/20 active:scale-95 transition-all animate-pulse"

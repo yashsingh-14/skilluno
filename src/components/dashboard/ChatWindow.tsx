@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Send, X, Loader2, Video, CheckCircle, AlertCircle, DollarSign } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useToast } from '@/components/ui/Toast'
 
 interface Message {
     id: string
@@ -22,6 +23,7 @@ interface ChatWindowProps {
 
 export default function ChatWindow({ currentUserId, otherUserId, otherUserName, onClose, onStartCall, sessionId }: ChatWindowProps) {
     const [messages, setMessages] = useState<Message[]>([])
+    const { toast } = useToast()
     const [newMessage, setNewMessage] = useState('')
     const [loading, setLoading] = useState(true)
     const [sending, setSending] = useState(false)
@@ -119,7 +121,7 @@ export default function ChatWindow({ currentUserId, otherUserId, otherUserName, 
             if (data.success) {
                 fetchSessionDetails() // Refresh UI
             } else {
-                alert("Action failed: " + (data.error || 'Unknown error'))
+                toast('Action failed: ' + (data.error || 'Unknown error'), 'error')
             }
         } catch (error) {
             console.error("Action error", error)
