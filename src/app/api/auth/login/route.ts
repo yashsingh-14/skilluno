@@ -15,7 +15,7 @@ export async function POST(request: Request) {
             where: { email },
         })
 
-        if (!user) {
+        if (!user || !user.password_hash) {
             return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
         }
 
@@ -40,7 +40,6 @@ export async function POST(request: Request) {
             path: '/',
         })
 
-        return response
         return response
     } catch (error) {
         console.error('Login error details:', error)

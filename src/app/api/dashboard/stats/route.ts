@@ -45,9 +45,16 @@ export async function GET() {
             }
         })
 
-        // Get average rating
+        // Get average rating (reviews on sessions where user participated)
         const ratings = await prisma.review.findMany({
-            where: { reviewed_user_id: user.id },
+            where: {
+                session: {
+                    OR: [
+                        { teacher_id: user.id },
+                        { learner_id: user.id }
+                    ]
+                }
+            },
             select: { rating: true }
         })
 
