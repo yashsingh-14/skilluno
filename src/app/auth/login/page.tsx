@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { Loader2, Mail, Lock, ArrowRight } from 'lucide-react'
@@ -9,13 +9,13 @@ import { Logo } from '@/components/ui/Logo'
 
 export default function LoginPage() {
     const router = useRouter()
-    const searchParams = useSearchParams()
     const [loading, setLoading] = useState(false)
     const [googleLoading, setGoogleLoading] = useState(false)
     const [error, setError] = useState('')
 
     useEffect(() => {
-        const err = searchParams.get('error')
+        const params = new URLSearchParams(window.location.search)
+        const err = params.get('error')
         if (err) {
             const messages: Record<string, string> = {
                 OAuthSignin: 'Error starting Google sign in',
@@ -26,7 +26,7 @@ export default function LoginPage() {
             }
             setError(messages[err] || messages.Default)
         }
-    }, [searchParams])
+    }, [])
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
