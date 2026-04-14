@@ -440,19 +440,65 @@ export default function LandingPage() {
                         </div>
                         <div>
                             <h4 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">Connect</h4>
-                            <div className="flex gap-3">
-                                <a href="https://github.com/yashsingh-14" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-9 w-9 rounded-lg bg-white/[0.04] border border-white/[0.06] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-all">
-                                    <Github className="h-4 w-4" />
-                                </a>
-                                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-9 w-9 rounded-lg bg-white/[0.04] border border-white/[0.06] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-all">
-                                    <Twitter className="h-4 w-4" />
-                                </a>
-                                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center h-9 w-9 rounded-lg bg-white/[0.04] border border-white/[0.06] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-all">
-                                    <Instagram className="h-4 w-4" />
-                                </a>
-                                <a href="mailto:contact@skilluno.com" className="flex items-center justify-center h-9 w-9 rounded-lg bg-white/[0.04] border border-white/[0.06] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-all">
-                                    <Mail className="h-4 w-4" />
-                                </a>
+                            <div className="flex gap-5">
+                                {[
+                                    {
+                                        name: 'GitHub',
+                                        href: 'https://github.com/yashsingh-14',
+                                        hoverBg: '#333',
+                                        hoverShadow: 'rgba(51,51,51,0.6)',
+                                        icon: <Github className="h-5 w-5" />,
+                                    },
+                                    {
+                                        name: 'Twitter',
+                                        href: 'https://twitter.com',
+                                        hoverBg: '#1DA1F2',
+                                        hoverShadow: 'rgba(29,161,242,0.6)',
+                                        icon: <Twitter className="h-5 w-5" />,
+                                    },
+                                    {
+                                        name: 'Instagram',
+                                        href: 'https://instagram.com',
+                                        hoverBg: 'radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%)',
+                                        hoverShadow: 'rgba(225,48,108,0.6)',
+                                        icon: <Instagram className="h-5 w-5" />,
+                                    },
+                                    {
+                                        name: 'Email',
+                                        href: 'mailto:contact@skilluno.com',
+                                        hoverBg: '#9333ea',
+                                        hoverShadow: 'rgba(147,51,234,0.6)',
+                                        icon: <Mail className="h-5 w-5" />,
+                                    },
+                                ].map((social) => (
+                                    <a
+                                        key={social.name}
+                                        href={social.href}
+                                        target={social.href.startsWith('mailto') ? undefined : '_blank'}
+                                        rel="noopener noreferrer"
+                                        className="social-icon-shake group flex flex-col items-center gap-2"
+                                    >
+                                        <div
+                                            className="flex items-center justify-center h-14 w-14 rounded-full bg-white/[0.04] border border-white/[0.08] text-zinc-400 group-hover:text-white group-hover:-translate-y-2 group-hover:scale-110 transition-all duration-300 backdrop-blur-sm"
+                                            style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.3)' }}
+                                            onMouseEnter={(e) => {
+                                                const el = e.currentTarget
+                                                el.style.background = social.hoverBg
+                                                el.style.boxShadow = `0 0 20px ${social.hoverShadow}`
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                const el = e.currentTarget
+                                                el.style.background = 'rgba(255,255,255,0.04)'
+                                                el.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)'
+                                            }}
+                                        >
+                                            {social.icon}
+                                        </div>
+                                        <span className="text-[10px] font-medium text-zinc-600 group-hover:text-zinc-300 transition-all duration-300 opacity-0 group-hover:opacity-100 -translate-y-1 group-hover:translate-y-0">
+                                            {social.name}
+                                        </span>
+                                    </a>
+                                ))}
                             </div>
                         </div>
                     </div>

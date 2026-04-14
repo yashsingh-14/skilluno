@@ -385,3 +385,86 @@ body::before {
   mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
 }
+
+/* ========================================
+   SOCIAL ICON SHAKE
+   ======================================== */
+
+@keyframes icon-shake {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  20% { transform: translateX(-4px) rotate(-5deg); }
+  40% { transform: translateX(4px) rotate(5deg); }
+  60% { transform: translateX(-4px) rotate(-5deg); }
+  80% { transform: translateX(4px) rotate(5deg); }
+}
+
+.social-icon-shake:hover svg {
+  animation: icon-shake 0.5s ease;
+}
+
+/* ========================================
+   FERROFLUID HERO BACKGROUND
+   ======================================== */
+
+.ferrofluid-canvas {
+  position: absolute;
+  inset: 0;
+  filter: url(#ferrofluid);
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.globule {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.globule-1 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(147, 51, 234, 0.7) 0%, rgba(147, 51, 234, 0.2) 60%, transparent 70%);
+  top: 10%;
+  left: 15%;
+  animation: ferro-float-1 12s ease-in-out infinite;
+}
+
+.globule-2 {
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(236, 72, 153, 0.6) 0%, rgba(236, 72, 153, 0.15) 60%, transparent 70%);
+  top: 30%;
+  right: 15%;
+  animation: ferro-float-2 10s ease-in-out infinite;
+}
+
+.globule-3 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.6) 0%, rgba(99, 102, 241, 0.15) 60%, transparent 70%);
+  bottom: 15%;
+  left: 40%;
+  animation: ferro-float-3 14s ease-in-out infinite;
+}
+
+@keyframes ferro-float-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(80px, 60px) scale(1.15); }
+  50% { transform: translate(-40px, 100px) scale(0.9); }
+  75% { transform: translate(60px, -40px) scale(1.1); }
+}
+
+@keyframes ferro-float-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-70px, -50px) scale(1.1); }
+  50% { transform: translate(50px, -80px) scale(0.95); }
+  75% { transform: translate(-60px, 50px) scale(1.05); }
+}
+
+@keyframes ferro-float-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(50px, -70px) scale(1.2); }
+  50% { transform: translate(-80px, -30px) scale(0.85); }
+  75% { transform: translate(40px, 60px) scale(1.1); }
+}
