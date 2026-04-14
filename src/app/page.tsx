@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import HeroScene from '@/components/landing/HeroScene'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
@@ -145,15 +144,21 @@ export default function LandingPage() {
             </nav>
 
             {/* =========== HERO SECTION =========== */}
-            <section className="relative z-20 flex min-h-screen flex-col items-center justify-center pt-20 bg-[#030303]">
-                {/* 3D Background */}
-                <div className="absolute inset-0 z-0 opacity-70">
-                    <HeroScene />
-                </div>
+            <section className="relative z-20 flex min-h-screen flex-col items-center justify-center pt-20 bg-[#030303] overflow-hidden">
+                {/* Ferrofluid SVG Filter */}
+                <svg width="0" height="0" style={{ position: 'absolute' }}>
+                    <filter id="ferrofluid">
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="18" result="blur" />
+                        <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 30 -10" result="goo" />
+                        <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+                    </filter>
+                </svg>
 
-                {/* Floating gradient orbs */}
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px] animate-float-slow pointer-events-none" />
-                <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-blue-600/10 rounded-full blur-[100px] animate-float pointer-events-none" />
+                {/* Ferrofluid Animated Background */}
+                <div className="ferrofluid-canvas">
+                    <div className="globule globule-1"></div>
+                    <div className="globule globule-2"></div>
+                </div>
 
                 <div className="relative z-10 text-center px-4 mb-12">
                     <div className="hero-text inline-flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/[0.08] px-4 py-1.5 text-xs font-medium text-purple-300 mb-8 backdrop-blur-sm">
