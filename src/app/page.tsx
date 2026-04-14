@@ -4,11 +4,13 @@ import { useEffect, useRef } from 'react'
 import HeroScene from '@/components/landing/HeroScene'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import Lenis from 'lenis'
+
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { TiltCard } from '@/components/ui/TiltCard'
 import { Logo } from '@/components/ui/Logo'
+import { ContainerScroll, CardsContainer, CardTransformed, ReviewStars } from '@/components/ui/animated-cards-stack'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import SkillsMarquee from '@/components/landing/SkillsMarquee'
 import Stats from '@/components/landing/Stats'
 import { ArrowRight, Sparkles, Coins, Users, Star, Zap, Shield, Globe, Github, Twitter, Instagram, Mail, ChevronRight, Play } from 'lucide-react'
@@ -36,6 +38,13 @@ const TESTIMONIALS = [
         text: "Found an amazing piano teacher through the matching system. The whole experience from matching to video sessions was seamless.",
         rating: 5,
         avatar: "RV"
+    },
+    {
+        name: "Sneha Patel",
+        role: "Taught Yoga, Learning Piano",
+        text: "The matching algorithm is incredible. Found the perfect piano teacher within minutes. The token economy makes fair pricing effortless.",
+        rating: 4.5,
+        avatar: "SP"
     },
 ]
 
@@ -71,15 +80,6 @@ export default function LandingPage() {
     const containerRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        const lenis = new Lenis({ lerp: 0.08 })
-
-        function raf(time: number) {
-            lenis.raf(time)
-            requestAnimationFrame(raf)
-        }
-
-        requestAnimationFrame(raf)
-
         const ctx = gsap.context(() => {
             gsap.from('.hero-text', {
                 y: 80,
@@ -107,7 +107,6 @@ export default function LandingPage() {
 
         return () => {
             ctx.revert()
-            lenis.destroy()
         }
     }, [])
 
@@ -120,7 +119,7 @@ export default function LandingPage() {
     }
 
     return (
-        <main ref={containerRef} className="min-h-screen text-white overflow-hidden relative">
+        <main ref={containerRef} className="min-h-screen text-white relative">
 
             {/* =========== NAVIGATION =========== */}
             <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-10 py-4 backdrop-blur-xl bg-black/20 border-b border-white/[0.04]">
@@ -146,7 +145,7 @@ export default function LandingPage() {
             </nav>
 
             {/* =========== HERO SECTION =========== */}
-            <section className="relative flex min-h-screen flex-col items-center justify-center pt-20">
+            <section className="relative z-20 flex min-h-screen flex-col items-center justify-center pt-20 bg-[#030303]">
                 {/* 3D Background */}
                 <div className="absolute inset-0 z-0 opacity-70">
                     <HeroScene />
@@ -205,7 +204,7 @@ export default function LandingPage() {
             </section>
 
             {/* =========== FEATURES SECTION =========== */}
-            <section className="py-24 px-6 relative z-10 reveal-section">
+            <section className="py-24 px-6 relative z-20 reveal-section bg-[#030303]">
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-16">
                         <span className="inline-flex items-center gap-2 rounded-full bg-purple-500/10 border border-purple-500/20 px-4 py-1.5 text-xs font-medium text-purple-400 mb-4">
@@ -236,7 +235,7 @@ export default function LandingPage() {
             </section>
 
             {/* =========== HOW IT WORKS =========== */}
-            <section id="how-it-works" className="py-24 px-6 relative z-10 reveal-section">
+            <section id="how-it-works" className="py-24 px-6 relative z-20 reveal-section bg-[#030303]">
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-16">
                         <span className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 text-xs font-medium text-blue-400 mb-4">
@@ -275,52 +274,64 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* =========== TESTIMONIALS =========== */}
-            <section className="py-24 px-6 relative z-10 reveal-section">
-                <div className="max-w-6xl mx-auto">
-                    <div className="text-center mb-16">
-                        <span className="inline-flex items-center gap-2 rounded-full bg-pink-500/10 border border-pink-500/20 px-4 py-1.5 text-xs font-medium text-pink-400 mb-4">
-                            <Star className="h-3.5 w-3.5" />
-                            Loved by learners
-                        </span>
-                        <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
-                            What our community says
-                        </h2>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-6">
-                        {TESTIMONIALS.map((t, i) => (
-                            <TiltCard key={i} className="rounded-2xl p-px glass-card group">
-                                <div className="h-full p-6 rounded-2xl bg-gradient-to-br from-white/[0.02] to-transparent">
-                                    {/* Stars */}
-                                    <div className="flex gap-1 mb-4">
-                                        {Array.from({ length: t.rating }).map((_, j) => (
-                                            <Star key={j} className="h-4 w-4 fill-yellow-500 text-yellow-500" />
-                                        ))}
-                                    </div>
-                                    {/* Quote */}
-                                    <p className="text-zinc-300 text-sm leading-relaxed mb-6 italic">
-                                        &ldquo;{t.text}&rdquo;
-                                    </p>
-                                    {/* Author */}
-                                    <div className="flex items-center gap-3 pt-4 border-t border-white/[0.06]">
-                                        <div className="flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 text-sm font-bold text-white">
-                                            {t.avatar}
-                                        </div>
-                                        <div>
-                                            <div className="text-sm font-semibold text-white">{t.name}</div>
-                                            <div className="text-xs text-zinc-500">{t.role}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </TiltCard>
-                        ))}
-                    </div>
+            {/* =========== TESTIMONIALS (Animated Card Stack) =========== */}
+            <section className="relative z-[5] px-8 py-12 bg-[#0a0a0a]">
+                <div className="text-center mb-4">
+                    <span className="inline-flex items-center gap-2 rounded-full bg-pink-500/10 border border-pink-500/20 px-4 py-1.5 text-xs font-medium text-pink-400 mb-4">
+                        <Star className="h-3.5 w-3.5" />
+                        Loved by learners
+                    </span>
+                    <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
+                        What our community says
+                    </h2>
+                    <p className="mt-3 text-zinc-500 text-sm max-w-md mx-auto">
+                        Real stories from learners and teachers who exchanged skills on SkillUNO.
+                    </p>
                 </div>
+                <ContainerScroll className="mx-auto max-w-6xl h-[300vh]">
+                    <div className="sticky left-0 top-0 h-svh w-full py-12">
+                        <CardsContainer className="mx-auto size-full h-[450px] w-[350px]">
+                            {TESTIMONIALS.map((testimonial, index) => (
+                                <CardTransformed
+                                    arrayLength={TESTIMONIALS.length}
+                                    key={index}
+                                    variant="dark"
+                                    index={index + 2}
+                                    role="article"
+                                >
+                                    <div className="flex flex-col items-center space-y-4 text-center">
+                                        <ReviewStars
+                                            className="text-yellow-400"
+                                            rating={testimonial.rating}
+                                        />
+                                        <div className="mx-auto w-4/5 text-lg text-white">
+                                            <blockquote>&ldquo;{testimonial.text}&rdquo;</blockquote>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <Avatar className="!size-12 border border-stone-700">
+                                            <AvatarFallback className="bg-gradient-to-br from-purple-600 to-pink-600 text-sm font-bold text-white">
+                                                {testimonial.avatar}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <span className="block text-lg font-semibold tracking-tight text-white md:text-xl">
+                                                {testimonial.name}
+                                            </span>
+                                            <span className="block text-sm text-zinc-500">
+                                                {testimonial.role}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </CardTransformed>
+                            ))}
+                        </CardsContainer>
+                    </div>
+                </ContainerScroll>
             </section>
 
             {/* =========== CTA SECTION =========== */}
-            <section className="py-24 px-6 relative z-10 reveal-section">
+            <section className="py-24 px-6 relative z-20 reveal-section bg-[#030303]">
                 <div className="max-w-4xl mx-auto text-center">
                     <div className="relative rounded-3xl overflow-hidden p-px">
                         <div className="absolute inset-0 bg-gradient-to-r from-purple-600/30 via-pink-600/30 to-purple-600/30 animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
@@ -351,7 +362,7 @@ export default function LandingPage() {
             </section>
 
             {/* =========== FOOTER =========== */}
-            <footer className="border-t border-white/[0.04] bg-black/40 relative z-10">
+            <footer className="border-t border-white/[0.04] bg-[#030303] relative z-20">
                 <div className="max-w-6xl mx-auto px-6 py-16">
                     <div className="grid md:grid-cols-4 gap-10 mb-12">
                         {/* Brand */}
