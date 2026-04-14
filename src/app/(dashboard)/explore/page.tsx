@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Search, Star, MapPin, Loader2, GraduationCap, Filter, Globe, Sparkles } from 'lucide-react'
+import { Star, MapPin, Loader2, GraduationCap, Filter, Globe, Sparkles } from 'lucide-react'
+import { SearchBar } from '@/components/ui/search-bar'
 
 interface Skill {
     id: string
@@ -73,18 +74,15 @@ export default function ExplorePage() {
                 <p className="text-sm text-zinc-500 mt-1">Browse all available teachers and skills in the community.</p>
             </div>
 
-            {/* Search + Filter Bar */}
+            {/* Animated Search Bar */}
             <div className="flex flex-col md:flex-row gap-3">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600" />
-                    <input
-                        type="text"
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        placeholder="Search skills, e.g. Python, Guitar..."
-                        className="input-premium pl-10 w-full"
-                    />
-                </div>
+                <SearchBar
+                    placeholder="Search skills, e.g. Python, Guitar..."
+                    value={search}
+                    onChange={(val) => setSearch(val)}
+                    onSearch={(val) => setSearch(val)}
+                    suggestions={skills.map(s => s.skill_name).filter((v, i, a) => a.indexOf(v) === i)}
+                />
             </div>
 
             {/* Category Pills */}

@@ -235,40 +235,71 @@ export default function LandingPage() {
             </section>
 
             {/* =========== HOW IT WORKS =========== */}
-            <section id="how-it-works" className="py-24 px-6 relative z-20 reveal-section bg-[#030303]">
-                <div className="max-w-6xl mx-auto">
-                    <div className="text-center mb-16">
+            <section id="how-it-works" className="py-28 px-6 relative z-20 reveal-section bg-[#030303]">
+                <div className="max-w-5xl mx-auto">
+                    <div className="text-center mb-20">
                         <span className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 text-xs font-medium text-blue-400 mb-4">
                             <Play className="h-3.5 w-3.5" />
                             Simple Process
                         </span>
-                        <h2 className="text-3xl md:text-5xl font-bold text-glow tracking-tight">
-                            How it works
+                        <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
+                            How it <span className="gradient-text-purple">works</span>
                         </h2>
+                        <p className="mt-4 text-zinc-500 max-w-md mx-auto">
+                            Three simple steps to start exchanging skills with people worldwide.
+                        </p>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-6 relative">
-                        {/* Connecting line */}
-                        <div className="hidden md:block absolute top-16 left-[20%] right-[20%] h-px bg-gradient-to-r from-purple-500/20 via-blue-500/20 to-pink-500/20" />
-
+                    {/* Steps */}
+                    <div className="space-y-0">
                         {[
-                            { num: "01", title: "Earn Tokens", desc: "Teach your skills to others. Whether it's coding, music, or cooking — your expertise has real value. Earn tokens for every session.", color: "purple", icon: Coins },
-                            { num: "02", title: "Spend Tokens", desc: "Use your hard-earned tokens to book 1-on-1 sessions with expert mentors from around the globe. Invest in yourself.", color: "blue", icon: Sparkles },
-                            { num: "03", title: "Grow Together", desc: "Build your reputation, get rated, climb the leaderboard and become a top-tier mentor in the community.", color: "pink", icon: Users },
+                            {
+                                num: "01",
+                                title: "Teach & Earn Tokens",
+                                desc: "List your skills — coding, music, design, fitness, cooking — anything you're great at. When someone books a session, you earn tokens for every hour you teach.",
+                                icon: Coins,
+                                gradient: "from-purple-500 to-violet-600",
+                                glow: "shadow-purple-500/25",
+                            },
+                            {
+                                num: "02",
+                                title: "Spend Tokens to Learn",
+                                desc: "Browse expert mentors and book 1-on-1 video sessions using your tokens. No real money needed — your skills are your currency.",
+                                icon: Sparkles,
+                                gradient: "from-blue-500 to-indigo-600",
+                                glow: "shadow-blue-500/25",
+                            },
+                            {
+                                num: "03",
+                                title: "Grow & Level Up",
+                                desc: "Earn reviews, climb the leaderboard, and unlock achievements. Build your reputation as a top-tier mentor in the community.",
+                                icon: Users,
+                                gradient: "from-pink-500 to-rose-600",
+                                glow: "shadow-pink-500/25",
+                            },
                         ].map((step, i) => (
-                            <TiltCard key={i} className="rounded-2xl p-px glass-card group">
-                                <div className={`h-full p-8 rounded-2xl bg-gradient-to-br ${colorMap[step.color]} to-transparent transition-all relative`}>
-                                    {/* Step number */}
-                                    <div className="flex items-center gap-4 mb-6">
-                                        <div className={`flex items-center justify-center h-12 w-12 rounded-xl bg-white/[0.05] ${colorMap[step.color].split(' ').pop()} font-mono text-lg font-bold`}>
-                                            {step.num}
-                                        </div>
-                                        <step.icon className={`h-5 w-5 ${colorMap[step.color].split(' ').pop()}`} />
+                            <div key={i} className="relative flex gap-6 md:gap-10 group">
+                                {/* Timeline line + number */}
+                                <div className="flex flex-col items-center">
+                                    <div className={`relative flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br ${step.gradient} shadow-lg ${step.glow} text-white font-mono text-lg font-bold z-10 group-hover:scale-110 transition-transform duration-300`}>
+                                        {step.num}
+                                        {/* Pulse ring */}
+                                        <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${step.gradient} opacity-0 group-hover:opacity-40 blur-md transition-opacity duration-500`} />
                                     </div>
-                                    <h3 className="text-xl font-bold mb-3 text-white">{step.title}</h3>
-                                    <p className="text-zinc-400 leading-relaxed">{step.desc}</p>
+                                    {i < 2 && (
+                                        <div className="w-px h-full min-h-[80px] bg-gradient-to-b from-white/[0.08] to-transparent" />
+                                    )}
                                 </div>
-                            </TiltCard>
+
+                                {/* Content */}
+                                <div className="pb-12 pt-2 flex-1">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <step.icon className={`h-5 w-5 text-transparent bg-clip-text`} style={{ color: i === 0 ? '#a855f7' : i === 1 ? '#6366f1' : '#ec4899' }} />
+                                        <h3 className="text-xl md:text-2xl font-bold text-white">{step.title}</h3>
+                                    </div>
+                                    <p className="text-zinc-400 leading-relaxed max-w-lg">{step.desc}</p>
+                                </div>
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -347,13 +378,22 @@ export default function LandingPage() {
                                     Join thousands of learners and teachers already exchanging skills on SkillUNO. Your journey starts now.
                                 </p>
                                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                                    <Link href="/auth/signup" className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-4 text-base font-bold text-white transition-all hover:scale-[1.03] hover:shadow-[0_0_30px_rgba(147,51,234,0.4)] active:scale-[0.98]">
-                                        Create Free Account
-                                        <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
-                                    </Link>
-                                    <Link href="/auth/login" className="inline-flex items-center justify-center gap-2 rounded-full bg-white/[0.06] px-6 py-4 text-base font-medium text-zinc-300 border border-white/[0.08] hover:bg-white/[0.1] transition-all">
-                                        I already have an account
-                                    </Link>
+                                    {session ? (
+                                        <Link href="/dashboard" className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-4 text-base font-bold text-white transition-all hover:scale-[1.03] hover:shadow-[0_0_30px_rgba(147,51,234,0.4)] active:scale-[0.98]">
+                                            Go to Dashboard
+                                            <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                                        </Link>
+                                    ) : (
+                                        <>
+                                            <Link href="/auth/signup" className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-4 text-base font-bold text-white transition-all hover:scale-[1.03] hover:shadow-[0_0_30px_rgba(147,51,234,0.4)] active:scale-[0.98]">
+                                                Create Free Account
+                                                <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                                            </Link>
+                                            <Link href="/auth/login" className="inline-flex items-center justify-center gap-2 rounded-full bg-white/[0.06] px-6 py-4 text-base font-medium text-zinc-300 border border-white/[0.08] hover:bg-white/[0.1] transition-all">
+                                                I already have an account
+                                            </Link>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
