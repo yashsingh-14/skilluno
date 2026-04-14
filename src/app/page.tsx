@@ -10,6 +10,7 @@ import { TiltCard } from '@/components/ui/TiltCard'
 import { Logo } from '@/components/ui/Logo'
 import { ContainerScroll, CardsContainer, CardTransformed, ReviewStars } from '@/components/ui/animated-cards-stack'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { TextHoverEffect, FooterBackgroundGradient } from '@/components/ui/text-hover-effect'
 import SkillsMarquee from '@/components/landing/SkillsMarquee'
 import Stats from '@/components/landing/Stats'
 import { ArrowRight, Sparkles, Coins, Users, Star, Zap, Shield, Globe, Github, Twitter, Instagram, Mail, ChevronRight, Play } from 'lucide-react'
@@ -202,14 +203,14 @@ export default function LandingPage() {
                 </div>
 
                 {/* Stats + Marquee */}
-                <div className="relative z-10 w-full mt-8">
+                <div className="relative z-10 w-full mt-20">
                     <Stats />
                     <SkillsMarquee />
                 </div>
             </section>
 
             {/* =========== FEATURES SECTION =========== */}
-            <section className="py-24 px-6 relative z-20 reveal-section bg-[#030303]">
+            <section className="pt-10 pb-24 px-6 relative z-20 reveal-section bg-[#030303]">
                 <div className="max-w-6xl mx-auto">
                     <div className="text-center mb-16">
                         <span className="inline-flex items-center gap-2 rounded-full bg-purple-500/10 border border-purple-500/20 px-4 py-1.5 text-xs font-medium text-purple-400 mb-4">
@@ -407,8 +408,9 @@ export default function LandingPage() {
             </section>
 
             {/* =========== FOOTER =========== */}
-            <footer className="border-t border-white/[0.04] bg-[#030303] relative z-20">
-                <div className="max-w-6xl mx-auto px-6 py-16">
+            <footer className="border-t border-white/[0.04] bg-[#030303] relative z-20 overflow-hidden">
+                <FooterBackgroundGradient />
+                <div className="max-w-6xl mx-auto px-6 pt-16 pb-8 relative z-10">
                     <div className="grid md:grid-cols-4 gap-10 mb-12">
                         {/* Brand */}
                         <div className="md:col-span-1">
@@ -508,8 +510,13 @@ export default function LandingPage() {
                         </div>
                     </div>
 
+                    {/* Interactive Brand Text */}
+                    <div className="h-40 md:h-52 flex items-center justify-center mb-4">
+                        <TextHoverEffect text="SkillUNO" />
+                    </div>
+
                     {/* Bottom bar */}
-                    <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-white/[0.04]">
+                    <div className="flex flex-col md:flex-row items-center justify-between pt-6 border-t border-white/[0.06]">
                         <p className="text-xs text-zinc-600">
                             © {new Date().getFullYear()} SkillUNO. Crafted with passion.
                         </p>

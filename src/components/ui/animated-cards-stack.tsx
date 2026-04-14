@@ -38,6 +38,7 @@ interface CardStickyProps
   incrementY?: number
   incrementZ?: number
   incrementRotation?: number
+  children?: React.ReactNode
 }
 interface ContainerScrollContextValue {
   scrollYProgress: MotionValue<number>
@@ -113,12 +114,14 @@ export const CardTransformed = React.forwardRef<
       className,
       variant,
       style,
+      children,
       ...props
     },
     ref
   ) => {
+    const [mousePos, setMousePos] = React.useState({ x: 50, y: 50 })
+    const [isHovered, setIsHovered] = React.useState(false)
 
-    
     const { scrollYProgress } = useContainerScrollContext()
 
     const start = index / (arrayLength + 1)
@@ -142,6 +145,14 @@ export const CardTransformed = React.forwardRef<
     const filterTemplate = useMotionTemplate`drop-shadow(${dx}px ${dy}px ${blur}px rgba(0,0,0,${alpha}))`
     const filter = variant === "light" ? filterTemplate : "none"
 
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect()
+      setMousePos({
+        x: ((e.clientX - rect.left) / rect.width) * 100,
+        y: ((e.clientY - rect.top) / rect.height) * 100,
+      })
+    }
+
     const cardStyle = {
       top: index * incrementY,
       transform,
@@ -156,8 +167,32 @@ export const CardTransformed = React.forwardRef<
         ref={ref}
         style={cardStyle}
         className={cn(cardVariants({ variant, className }))}
+        onMouseMove={handleMouseMove}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         {...props}
-      />
+      >
+        {/* Glow border overlay */}
+        <div
+          className="pointer-events-none absolute inset-0 rounded-2xl transition-opacity duration-500"
+          style={{
+            opacity: isHovered ? 1 : 0,
+            background: `radial-gradient(circle at ${mousePos.x}% ${mousePos.y}%, rgba(147,51,234,0.5) 0%, rgba(99,102,241,0.2) 40%, transparent 70%)`,
+            maskImage: 'linear-gradient(#fff, #fff)',
+            WebkitMaskImage: 'linear-gradient(#fff, #fff)',
+          }}
+        />
+        <div
+          className="pointer-events-none absolute inset-[1px] rounded-2xl transition-opacity duration-500"
+          style={{
+            opacity: isHovered ? 1 : 0,
+            background: 'rgb(9,9,11)',
+          }}
+        />
+        <div className="relative z-10 flex size-full flex-col items-center justify-center gap-6">
+          {children}
+        </div>
+      </motion.div>
     )
   }
 )
