@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
@@ -74,6 +74,70 @@ const FEATURES = [
         color: "blue"
     },
 ]
+
+// === Interactive Glowing Step Card Component ===
+const StepGlowCard = ({ step, index }: { step: any, index: number }) => {
+    const [mousePos, setMousePos] = useState({ x: 50, y: 50 })
+    const [isHovered, setIsHovered] = useState(false)
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect()
+        setMousePos({
+            x: ((e.clientX - rect.left) / rect.width) * 100,
+            y: ((e.clientY - rect.top) / rect.height) * 100,
+        })
+    }
+
+    return (
+        <div
+            className="group relative flex flex-col justify-between rounded-3xl overflow-hidden min-h-[360px] p-8 border border-white/[0.08]"
+            onMouseMove={handleMouseMove}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            {/* Soft backdrop blur + translucent base */}
+            <div className="absolute inset-0 bg-white/[0.01] backdrop-blur-sm" />
+
+            {/* Glowing border overlay that follows cursor */}
+            <div
+                className="pointer-events-none absolute inset-0 transition-opacity duration-500 z-10"
+                style={{
+                    opacity: isHovered ? 1 : 0,
+                    background: `radial-gradient(1200px circle at ${mousePos.x}% ${mousePos.y}%, rgba(255,255,255,0.06), transparent 40%)`,
+                }}
+            />
+            {/* Colorful inner glow on hover */}
+            <div
+                className="pointer-events-none absolute inset-0 transition-opacity duration-500"
+                style={{
+                    opacity: isHovered ? 1 : 0,
+                    background: `radial-gradient(600px circle at ${mousePos.x}% ${mousePos.y}%, ${
+                        index === 0 ? 'rgba(147,51,234,0.15)' : index === 1 ? 'rgba(99,102,241,0.15)' : 'rgba(236,72,153,0.15)'
+                    }, transparent 40%)`,
+                }}
+            />
+
+            {/* Content wrapper */}
+            <div className="relative z-20 flex flex-col h-full">
+                {/* Background Watermark Number */}
+                <div className="absolute -top-12 -right-6 text-[180px] font-black text-white/[0.03] leading-none select-none tracking-tighter transition-transform duration-700 group-hover:scale-110 group-hover:text-white/[0.05]">
+                    {step.num}
+                </div>
+
+                {/* Floating Icon */}
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br ${step.gradient} shadow-lg ${step.glow} mb-8 transform transition-transform duration-500 group-hover:-translate-y-2 group-hover:scale-110`}>
+                    <step.icon className="h-8 w-8 text-white" />
+                </div>
+
+                {/* Text Content */}
+                <div className="mt-auto space-y-4">
+                    <h3 className="text-2xl font-bold text-white tracking-tight">{step.title}</h3>
+                    <p className="text-zinc-400 font-medium leading-relaxed pr-6">{step.desc}</p>
+                </div>
+            </div>
+        </div>
+    )
+}
 
 export default function LandingPage() {
     const { data: session } = useSession()
@@ -242,22 +306,22 @@ export default function LandingPage() {
 
             {/* =========== HOW IT WORKS =========== */}
             <section id="how-it-works" className="py-28 px-6 relative z-20 reveal-section bg-[#030303]">
-                <div className="max-w-5xl mx-auto">
+                <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-20">
-                        <span className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 text-xs font-medium text-blue-400 mb-4">
+                        <span className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 text-xs font-medium text-blue-400 mb-4 uppercase tracking-wider">
                             <Play className="h-3.5 w-3.5" />
                             Simple Process
                         </span>
-                        <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
+                        <h2 className="text-4xl md:text-6xl font-bold tracking-tight">
                             How it <span className="gradient-text-purple">works</span>
                         </h2>
-                        <p className="mt-4 text-zinc-500 max-w-md mx-auto">
-                            Three simple steps to start exchanging skills with people worldwide.
+                        <p className="mt-6 text-zinc-400 text-lg font-medium max-w-2xl mx-auto">
+                            Three simple steps to start exchanging your skills with people worldwide.
                         </p>
                     </div>
 
-                    {/* Steps */}
-                    <div className="space-y-0">
+                    {/* Glowing Bento Grid Steps */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {[
                             {
                                 num: "01",
@@ -265,7 +329,7 @@ export default function LandingPage() {
                                 desc: "List your skills — coding, music, design, fitness, cooking — anything you're great at. When someone books a session, you earn tokens for every hour you teach.",
                                 icon: Coins,
                                 gradient: "from-purple-500 to-violet-600",
-                                glow: "shadow-purple-500/25",
+                                glow: "shadow-purple-500/50",
                             },
                             {
                                 num: "02",
@@ -273,7 +337,7 @@ export default function LandingPage() {
                                 desc: "Browse expert mentors and book 1-on-1 video sessions using your tokens. No real money needed — your skills are your currency.",
                                 icon: Sparkles,
                                 gradient: "from-blue-500 to-indigo-600",
-                                glow: "shadow-blue-500/25",
+                                glow: "shadow-blue-500/50",
                             },
                             {
                                 num: "03",
@@ -281,31 +345,10 @@ export default function LandingPage() {
                                 desc: "Earn reviews, climb the leaderboard, and unlock achievements. Build your reputation as a top-tier mentor in the community.",
                                 icon: Users,
                                 gradient: "from-pink-500 to-rose-600",
-                                glow: "shadow-pink-500/25",
+                                glow: "shadow-pink-500/50",
                             },
                         ].map((step, i) => (
-                            <div key={i} className="relative flex gap-6 md:gap-10 group">
-                                {/* Timeline line + number */}
-                                <div className="flex flex-col items-center">
-                                    <div className={`relative flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br ${step.gradient} shadow-lg ${step.glow} text-white font-mono text-lg font-bold z-10 group-hover:scale-110 transition-transform duration-300`}>
-                                        {step.num}
-                                        {/* Pulse ring */}
-                                        <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${step.gradient} opacity-0 group-hover:opacity-40 blur-md transition-opacity duration-500`} />
-                                    </div>
-                                    {i < 2 && (
-                                        <div className="w-px h-full min-h-[80px] bg-gradient-to-b from-white/[0.08] to-transparent" />
-                                    )}
-                                </div>
-
-                                {/* Content */}
-                                <div className="pb-12 pt-2 flex-1">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <step.icon className={`h-5 w-5 text-transparent bg-clip-text`} style={{ color: i === 0 ? '#a855f7' : i === 1 ? '#6366f1' : '#ec4899' }} />
-                                        <h3 className="text-xl md:text-2xl font-bold text-white">{step.title}</h3>
-                                    </div>
-                                    <p className="text-zinc-400 leading-relaxed max-w-lg">{step.desc}</p>
-                                </div>
-                            </div>
+                            <StepGlowCard key={i} step={step} index={i} />
                         ))}
                     </div>
                 </div>
